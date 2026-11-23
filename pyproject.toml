@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling>=1.27"]  # PEP 639 license / license-files
+build-backend = "hatchling.build"
+
+[project]
+name = "physicalai-sim2real-camera"
+version = "0.1.0"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+dependencies = [
+    "mujoco",
+    "numpy",
+    "opencv-python-headless>=4.8",  # cv2.aruco CharucoDetector API (OpenCV 5 drops the legacy charuco functions)
+]
+
+[project.optional-dependencies]
+gpu = ["torch", "cuda-python"]
+gym = ["gymnasium"]  # gym_wrapper.RealSensorWrapper
+dev = ["pytest", "pytest-cov", "ruff", "gymnasium"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+# ROS Jazzy on this machine injects launch_ros/ament pytest plugins that import yaml; run with
+# PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 (the pre-push hook and `make test` do) and load only what we need.
+addopts = "-p pytest_cov -p no:cacheprovider -q"
+
+[tool.coverage.run]
+source = ["physicalai_sim2real_camera"]
+branch = true
+# measure code run by test subprocesses too (examples/*.py importing dmabuf.py, CLIs): pytest-cov 7
+# leaves this to coverage >= 7.10; each child writes a parallel .coverage.* file that pytest-cov combines
+patch = ["subprocess"]  # the 90 % gate needs this: without it the total is ~81 % (dmabuf.py 0 %)
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 90
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["third_party", "out", ".omc"]
+
+[tool.ruff.lint]
+# E/F/W: errors; I: import order; D: every public module/class/function/method documented.
+select = ["E", "F", "W", "I", "D"]
+# D203/D213/D413: the standard suppressions for the google convention (mutually exclusive pairs).
+# E741: sensor.py uses the physics symbol `I` for irradiance. E731/E702: existing one-line lambdas
+# and `a; b` bench lines in examples/tests; not worth a churn-only rewrite.
+ignore = ["D203", "D213", "D413", "E731", "E741", "E702"]
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]          # tests document themselves through their asserts and print lines
+"examples/*" = ["D1"]
+"scripts/*" = ["D1"]
+[tool.ruff.lint.pydocstyle]
+convention = "google"

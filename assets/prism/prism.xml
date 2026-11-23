@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mujoco model="prism">
+  <compiler texturedir="."/>
+  <asset>
+    <texture name="face_0" type="2d" file="face_0.png"/>
+    <material name="face_0_mat" texture="face_0" texuniform="false" specular="0" shininess="0" reflectance="0"/>
+    <texture name="face_1" type="2d" file="face_1.png"/>
+    <material name="face_1_mat" texture="face_1" texuniform="false" specular="0" shininess="0" reflectance="0"/>
+    <texture name="face_2" type="2d" file="face_2.png"/>
+    <material name="face_2_mat" texture="face_2" texuniform="false" specular="0" shininess="0" reflectance="0"/>
+    <texture name="face_3" type="2d" file="face_3.png"/>
+    <material name="face_3_mat" texture="face_3" texuniform="false" specular="0" shininess="0" reflectance="0"/>
+    <texture name="face_4" type="2d" file="face_4.png"/>
+    <material name="face_4_mat" texture="face_4" texuniform="false" specular="0" shininess="0" reflectance="0"/>
+    <texture name="face_5" type="2d" file="face_5.png"/>
+    <material name="face_5_mat" texture="face_5" texuniform="false" specular="0" shininess="0" reflectance="0"/>
+  </asset>
+  <worldbody>
+    <body name="prism" pos="0 0 0">
+      <geom name="face_0" type="box" size="0.180000 0.180000 0.002000" pos="0.309769 0.000000 0.180000" quat="0.500000 0.500000 0.500000 0.500000" material="face_0_mat"/>
+      <geom name="face_1" type="box" size="0.180000 0.180000 0.002000" pos="0.154885 0.268268 0.180000" quat="0.183013 0.183013 0.683013 0.683013" material="face_1_mat"/>
+      <geom name="face_2" type="box" size="0.180000 0.180000 0.002000" pos="-0.154885 0.268268 0.180000" quat="-0.183013 -0.183013 0.683013 0.683013" material="face_2_mat"/>
+      <geom name="face_3" type="box" size="0.180000 0.180000 0.002000" pos="-0.309769 0.000000 0.180000" quat="-0.500000 -0.500000 0.500000 0.500000" material="face_3_mat"/>
+      <geom name="face_4" type="box" size="0.180000 0.180000 0.002000" pos="-0.154885 -0.268268 0.180000" quat="0.683013 0.683013 -0.183013 -0.183013" material="face_4_mat"/>
+      <geom name="face_5" type="box" size="0.180000 0.180000 0.002000" pos="0.154885 -0.268268 0.180000" quat="0.683013 0.683013 0.183013 0.183013" material="face_5_mat"/>
+    </body>
+  </worldbody>
+</mujoco>

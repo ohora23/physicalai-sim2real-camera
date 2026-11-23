@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PhysicalAI Sim2Real Camera — Real-Camera Realism for Physical AI Simulators</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Make MuJoCo and Genesis cameras behave like the robot's real camera: distortion, noise, motion blur, rolling shutter, depth artefacts, latency and drops, fitted from real captures.">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-alt: #f6f7f9;
+    --text: #1a1d21;
+    --text-dim: #565c66;
+    --border: #e3e6ea;
+    --accent: #2563eb;
+    --accent-bg: #eef3ff;
+    --good: #0f9960;
+    --bad: #d1453d;
+    --code-bg: #f1f3f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --bg-alt: #1b1e24;
+      --text: #e7e9ec;
+      --text-dim: #9aa1ab;
+      --border: #2a2e35;
+      --accent: #5b9dff;
+      --accent-bg: #1b2a45;
+      --good: #33c481;
+      --bad: #ff6f68;
+      --code-bg: #1f232a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14161a; --bg-alt: #1b1e24; --text: #e7e9ec; --text-dim: #9aa1ab;
+    --border: #2a2e35; --accent: #5b9dff; --accent-bg: #1b2a45; --good: #33c481;
+    --bad: #ff6f68; --code-bg: #1f232a;
+  }
+  :root[data-theme="light"] {
+    --bg: #ffffff; --bg-alt: #f6f7f9; --text: #1a1d21; --text-dim: #565c66;
+    --border: #e3e6ea; --accent: #2563eb; --accent-bg: #eef3ff; --good: #0f9960;
+    --bad: #d1453d; --code-bg: #f1f3f5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+  header.hero {
+    background: var(--bg-alt);
+    border-bottom: 1px solid var(--border);
+    padding: 64px 0 40px;
+    text-align: center;
+  }
+  h1 { font-size: 1.9rem; margin: 0 0 10px; letter-spacing: -0.01em; }
+  .subtitle { color: var(--text-dim); font-size: 1.05rem; margin: 0 0 22px; }
+  .badge {
+    display: inline-block; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em;
+    text-transform: uppercase; color: var(--accent); background: var(--accent-bg);
+    border-radius: 100px; padding: 4px 12px; margin-bottom: 18px;
+  }
+  .links { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .links a {
+    color: var(--text); text-decoration: none; border: 1px solid var(--border);
+    padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; background: var(--bg);
+  }
+  .links a:hover { border-color: var(--accent); color: var(--accent); }
+  main { padding: 48px 0 20px; }
+  section { margin-bottom: 56px; }
+  h2 {
+    font-size: 1.3rem; margin: 0 0 6px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  h2 .num { color: var(--accent); font-variant-numeric: tabular-nums; margin-right: 8px; }
+  p { color: var(--text); }
+  .dim { color: var(--text-dim); }
+  figure { margin: 20px 0; text-align: center; }
+  figure img { max-width: 100%; border-radius: 8px; border: 1px solid var(--border); }
+  figcaption { color: var(--text-dim); font-size: 0.85rem; margin-top: 10px; }
+  .two-col {
+    display: grid; grid-template-columns: 1fr; gap: 24px; align-items: center;
+  }
+  @media (min-width: 640px) { .two-col { grid-template-columns: 1fr 1fr; } }
+  .card {
+    background: var(--bg-alt); border: 1px solid var(--border); border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .card h3 { margin: 0 0 8px; font-size: 1rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin: 18px 0; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-dim); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.02em; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .up { color: var(--good); font-weight: 600; }
+  .down { color: var(--bad); font-weight: 600; }
+  code, pre {
+    background: var(--code-bg); border-radius: 6px; font-size: 0.85em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  code { padding: 1px 6px; }
+  pre { padding: 14px 16px; overflow-x: auto; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 6px; }
+  footer {
+    border-top: 1px solid var(--border); padding: 28px 0 48px;
+    color: var(--text-dim); font-size: 0.85rem; text-align: center;
+  }
+  footer a { color: var(--accent); }
+  .hero-img { max-width: 100%; border-radius: 10px; margin-top: 28px; border: 1px solid var(--border); }
+  .grid3 { display:grid; grid-template-columns:1fr; gap:14px; }
+  @media (min-width: 640px) { .grid3 { grid-template-columns:1fr 1fr 1fr; } }
+  .stat { font-size:1.5rem; font-weight:700; color:var(--accent); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="badge">MuJoCo · Genesis · Apache-2.0</div>
+    <h1>PhysicalAI Sim2Real Camera</h1>
+    <p class="subtitle">Make your simulator's camera behave like the real one on your robot,<br>with physical knobs fitted from real-camera captures</p>
+    <div class="links">
+      <a href="https://github.com/ohora23/physicalai-sim2real-camera">Code</a>
+      <a href="whitepaper/genesis/">White paper (Genesis)</a>
+      <a href="https://github.com/ohora23/physicalai-sim2real-camera/blob/main/docs/capture_protocol.md">Capture protocol</a>
+      <a href="https://github.com/ohora23/physicalai-sim2real-camera/blob/main/docs/observer.md">Online observer</a>
+    </div>
+    <img class="hero-img" src="img/readme_banner.jpg" alt="Real RGB and depth camera data on one side, MuJoCo and Genesis on the other, joined by a sim-to-real camera pipeline">
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section>
+    <h2><span class="num">01</span>Problem</h2>
+    <p>A simulator camera draws one ideal instant of the scene. The camera on a robot does not: its lens distorts and
+    vignettes, its sensor adds noise and auto exposure, the image smears with motion and skews under a rolling shutter,
+    depth has holes and flying pixels, and frames arrive late, jittered and sometimes not at all. A policy trained on ideal
+    renders meets all of this for the first time on the real robot.</p>
+    <p>A calibration fixes the geometry once, but latency, rolling shutter and motion blur change with every frame and
+    every head motion, and noise, exposure and drops come from the sensor and the transport. No calibration step removes
+    them; they have to be handled, and that handling can be developed in simulation.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span>What it models</h2>
+    <p>Every effect is identity by default, and nearly every parameter is a physical knob. The image pipeline does not
+    depend on the simulator: MuJoCo and Genesis are supported, and any other renderer only has to hand over its frames.</p>
+    <table>
+      <thead><tr><th>Stage</th><th>Effects</th></tr></thead>
+      <tbody>
+        <tr><td>Optics</td><td>Brown-Conrady distortion with a margin render, vignetting or measured flat field, depth of field, lens / OLPF blur</td></tr>
+        <tr><td>Exposure &amp; sensor</td><td>EV offset, auto exposure and white balance with time constants, shot / read noise, PRNU / DSNU, Bayer mosaic, gamma, quantisation</td></tr>
+        <tr><td>Temporal</td><td>Motion blur over the exposure window, rolling shutter by readout band, camera-mount vibration</td></tr>
+        <tr><td>Depth</td><td>Edge holes and flying pixels, z²-scaled axial noise, minimum and maximum range</td></tr>
+        <tr><td>Timing</td><td>Frame rate and phase, latency, Gamma-distributed jitter, frame drops, sample-and-hold delivery to the control loop</td></tr>
+        <tr><td>Environment</td><td>Colour matrix, mains-light flicker under a rolling shutter, lens dust and veiling glare, scene lighting and walkers</td></tr>
+      </tbody>
+    </table>
+    <figure>
+      <img src="img/ideal_vs_real.png" alt="Ideal render next to the realistic pipeline output">
+      <figcaption>Ideal render next to the realistic pipeline output: Unitree G1 head camera and a calibration board.</figcaption>
+    </figure>
+    <div class="two-col">
+      <div class="card"><h3>Why a post-process, not a plugin</h3><p class="dim">Motion blur and rolling shutter need several
+      instants inside one exposure, which only a layer around the renderer can provide. MuJoCo sensor plugins cannot render,
+      and Genesis camera sensors refuse delay and jitter.</p></div>
+      <div class="card"><h3>One config, every simulator</h3><p class="dim">The camera is described by an MJCF camera in every
+      case, so one <code>CameraConfig</code> means the same camera in MuJoCo and in Genesis, and a fitted config drives both.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">03</span>Measured performance</h2>
+    <p class="dim">RTX 5080, idle GPU.</p>
+    <div class="grid3">
+      <div class="card"><div class="stat">0.3 ms</div><p class="dim">per 640×480 frame on the MuJoCo GPU path, GL colour buffer taken straight into CUDA</p></div>
+      <div class="card"><div class="stat">0.34 ms</div><p class="dim">per camera with 64 cameras batched on one renderer (≈ 22 ms in total)</p></div>
+      <div class="card"><div class="stat">1.1 ms</div><p class="dim">per environment at 256 batched Genesis environments with the Madrona renderer, frames kept on the GPU</p></div>
+    </div>
+    <table>
+      <thead><tr><th>Path</th><th>When</th><th>Measured</th></tr></thead>
+      <tbody>
+        <tr><td>MuJoCo, CPU</td><td>one camera, no torch in the process</td><td class="num">≈ 3.2 ms / frame</td></tr>
+        <tr><td>MuJoCo, GPU</td><td>the frame goes to a CUDA policy anyway</td><td class="num">≈ 0.3 ms / frame</td></tr>
+        <tr><td>MuJoCo, virtual sensor</td><td>a GL-only sim process exports frames by dma-buf to a CUDA effects process, published on an <a href="https://ohora23.github.io/Axon_SDK_for_PhysicalAI/">axon</a> zero-copy topic</td><td>three processes</td></tr>
+        <tr><td>Genesis, batched (OpenGL)</td><td>G1 window mode, 13 sub-renders + depth</td><td class="num">7.2 ms / env at 16 envs</td></tr>
+        <tr><td>Genesis, Madrona</td><td>large batches, every env in one GPU pass</td><td class="num up">1.12 ms / env at 256 envs</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2><span class="num">04</span>Agreement between simulators</h2>
+    <p>The same camera config in MuJoCo and Genesis gives the same images up to the renderers' own shading, measured on
+    the WIRobotics ALLEX head camera and a Unitree G1:</p>
+    <table>
+      <thead><tr><th>Check</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Motion blur + rolling shutter silhouettes, G1 yawing at 2.5 rad/s</td><td class="up">IoU median 0.995, centroid 0.46 px</td></tr>
+        <tr><td>Checkerboard K / D recovered through each pipeline</td><td class="up">fx / fy within 0.14 %, corners within 0.70 px</td></tr>
+        <tr><td>Depth on targets</td><td class="up">median difference 0.15 mm</td></tr>
+        <tr><td>Physics with the Genesis camera on vs off</td><td class="up">identical trajectories</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2><span class="num">05</span>Calibrating against a real camera</h2>
+    <div class="grid3">
+      <div class="card"><h3>Calibrated preset</h3><p class="dim">Use your K, D and mount; everything a calibration does not reach
+      is on at typical values and can be randomised, including per-episode mount perturbation.</p></div>
+      <div class="card"><h3>Full fit</h3><p class="dim">One capture session (checkerboard, flat and dark fields, grey chart,
+      noise stack, LED blink) becomes a <code>camera_config.json</code> plus its uncertainty, validated by fitting synthetic
+      captures back to a known config.</p></div>
+      <div class="card"><h3>Online observer</h3><p class="dim">Keeps estimating K, noise and latency while the robot moves;
+      in MuJoCo across 20 seeds: focal length 0.3 %, principal point 2.3 px, latency 2 ms, every |error| / σ ≤ 3.</p></div>
+    </div>
+<pre><code>python scripts/calibrate.py calib_data --out camera_config.json --report calib_report</code></pre>
+  </section>
+
+  <section>
+    <h2><span class="num">06</span>White paper</h2>
+    <a class="card" href="whitepaper/genesis/" style="display:block;text-decoration:none;color:inherit">
+      <h3>Realistic Cameras for Genesis →</h3>
+      <p class="dim">What the Genesis backend adds on top of Genesis, how the mirror-scene rendering works, where it agrees
+      with MuJoCo and what it does not support, with figures and videos on Unitree G1, WIRobotics ALLEX and Apptronik Apollo.</p>
+    </a>
+  </section>
+
+  <section>
+    <h2><span class="num">07</span>Quickstart</h2>
+<pre><code>from physicalai_sim2real_camera import CameraConfig, CameraStream, SimCamera
+
+cfg = CameraConfig(640, 480, dist=(-0.3, 0.1, 0.001, -0.001, 0.0), vignette=1.0,
+                   sigma_shot=0.02, sigma_read=0.005, gamma=2.2,
+                   fps=30, latency_s=0.05, jitter_k=2, jitter_theta=0.005, drop_prob=0.05)
+cam = SimCamera(model, "cam", cfg)      # wraps a mujoco.Renderer
+rgb, z = cam.render(data, depth=True)   # what the real camera would deliver
+stream = CameraStream(cam, cfg)         # fps / latency / jitter / drops, driven by sim time</code></pre>
+    <p class="dim">RGB and depth are complete through calibration, the GPU and batch paths, the virtual sensor and the online
+    observer in MuJoCo; the Genesis backend agrees within the numbers above. Next: real recordings of the target camera
+    through the observer, and further simulators through the same <code>ingest</code> entry point.</p>
+  </section>
+
+</main>
+
+<footer>
+  PhysicalAI Sim2Real Camera · Apache-2.0 · by <a href="https://github.com/ohora23">Jeong-Ki Yoo</a>
+  &middot; <a href="https://github.com/ohora23/physicalai-sim2real-camera">Source on GitHub</a>
+</footer>
+
+</body>
+</html>

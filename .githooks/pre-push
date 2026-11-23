@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Pre-push gate (enable once with: git config core.hooksPath .githooks).
+# Runs the lint + full test suite before anything leaves this machine. GitHub-hosted CI has no
+# GPU/EGL, so this hook is the CI. Bypass only with an explicit reason: SKIP_PREPUSH=1 git push.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+if [ "${SKIP_PREPUSH:-0}" = "1" ]; then echo "pre-push: SKIPPED by SKIP_PREPUSH=1"; exit 0; fi
+echo "pre-push: make lint"
+make lint
+echo "pre-push: make cov (MUJOCO_GL=egl, coverage gate from pyproject)"
+make cov

@@ -1,0 +1,13 @@
+calib_data/
+calib_report/
+*.egg-info/
+.gstack/
+out/
+progress.txt
+*.pyc
+__pycache__/
+/.venv
+/third_party
+.coverage
+.coverage.*
+.venv-hil/

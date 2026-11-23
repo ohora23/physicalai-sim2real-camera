@@ -1,0 +1,13 @@
+physicalai-sim2real-camera
+Copyright 2026 The physicalai-sim2real-camera authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Robot models, meshes and textures used by the examples (third_party/) are not
+part of this repository. They are downloaded separately and remain under their own licenses.
+
+Figures and videos include renders of MuJoCo Menagerie models: Unitree G1 (BSD-3-Clause) and
+Apptronik Apollo (Apache-2.0).
+
+MuJoCo, Genesis and other product names and logos shown in the documentation are trademarks of
+their respective owners; this license grants no rights to them.

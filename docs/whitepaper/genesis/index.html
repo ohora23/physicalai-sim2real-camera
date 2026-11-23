@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Realistic Cameras for Genesis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (~68ch) with full-width figures that may break out to 1080px; numbered sections because a white paper is read in order. */
+:root {
+  --bg: #f7f8fa; --paper: #ffffff; --ink: #14171c; --ink-2: #4a5160; --ink-3: #6f7686;
+  --rule: #dfe3ea; --accent: #2f55c8; --accent-soft: #e8edfb; --code-bg: #eef1f6;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --grid: #e6e9ef;
+  --f-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111317; --paper: #171a1f; --ink: #eceef2; --ink-2: #b8bdc8; --ink-3: #8b91a0;
+  --rule: #2a2f38; --accent: #7f9cf5; --accent-soft: #1d2540; --code-bg: #1e2229;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --grid: #262b33; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111317; --paper: #171a1f; --ink: #eceef2; --ink-2: #b8bdc8; --ink-3: #8b91a0;
+  --rule: #2a2f38; --accent: #7f9cf5; --accent-soft: #1d2540; --code-bg: #1e2229;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --grid: #262b33; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.65 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 48px 72px; display: grid; gap: 56px }
+.col { max-width: 70ch; margin: 0 auto; width: 100%; min-width: 0 }
+header.hero { display: grid; gap: 18px; border-bottom: 1px solid var(--rule); padding-bottom: 40px }
+.kicker { font: 500 12px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent) }
+h1 { font: 700 clamp(34px, 5.2vw, 56px)/1.05 var(--f-display); letter-spacing: -.02em; margin: 0; text-wrap: balance; max-width: 18ch }
+.lede { font-size: 19px; color: var(--ink-2); margin: 0; max-width: 62ch }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 24px; font: 400 13px/1.4 var(--f-mono); color: var(--ink-3) }
+.meta b { color: var(--ink-2); font-weight: 500 }
+section { display: grid; gap: 18px }
+h2 { font: 600 28px/1.2 var(--f-display); margin: 0; letter-spacing: -.01em; text-wrap: balance; display: flex; gap: 14px; align-items: baseline }
+h2 .n { font: 500 14px/1 var(--f-mono); color: var(--accent); }
+h3 { font: 600 18px/1.3 var(--f-display); margin: 8px 0 0 }
+p { margin: 0 }
+.col > p + p, .col > p + ul, .col > ul + p { margin-top: 0 }
+ul { margin: 0; padding-left: 20px; display: grid; gap: 6px }
+code, kbd { font: 400 .88em/1 var(--f-mono); background: var(--code-bg); padding: .15em .35em; border-radius: 4px }
+pre { font: 400 13px/1.55 var(--f-mono); background: var(--code-bg); padding: 16px 18px; border-radius: 8px; overflow-x: auto; margin: 0 }
+pre code { background: none; padding: 0 }
+a { color: var(--accent) }
+figure { margin: 0; display: grid; gap: 10px; min-width: 0 }
+figure img, figure video { width: 100%; max-width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--rule); background: #000; display: block }
+figcaption { font-size: 14px; color: var(--ink-2); max-width: 75ch }
+figcaption b { color: var(--ink) }
+.wide { max-width: 1080px; width: 100% }
+.tbl { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper) }
+table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top }
+th { font: 600 12px/1.3 var(--f-body); letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); background: var(--paper) }
+tr:last-child td { border-bottom: 0 }
+td.num, th.num { text-align: right; white-space: nowrap }
+.keyfigs { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px }
+.kf { background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 16px 18px; display: grid; gap: 4px; align-content: start }
+.kf .v { font: 600 30px/1.1 var(--f-display); letter-spacing: -.01em }
+.kf .l { font-size: 13px; color: var(--ink-2) }
+.note { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 14px 18px; border-radius: 0 8px 8px 0; font-size: 15px }
+.chart { background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 16px; position: relative; min-width: 0 }
+.chart svg { width: 100%; height: auto; display: block }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-2); margin-bottom: 8px }
+.legend span { display: inline-flex; align-items: center; gap: 7px }
+.legend i { width: 18px; height: 3px; border-radius: 2px; display: inline-block }
+.legend i.dot { width: 10px; height: 10px; border-radius: 50% }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--paper); font: 400 12px/1.4 var(--f-body); padding: 6px 9px; border-radius: 6px; white-space: nowrap; transform: translate(-50%, calc(-100% - 10px)) }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px }
+.two > * { min-width: 0 }
+details { border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); padding: 10px 14px }
+summary { cursor: pointer; font-weight: 500; color: var(--ink-2) }
+.tag { font: 500 11px/1 var(--f-mono); padding: 3px 7px; border-radius: 999px; border: 1px solid var(--rule); color: var(--ink-2); white-space: nowrap }
+footer { border-top: 1px solid var(--rule); padding-top: 24px; font-size: 13px; color: var(--ink-3); display: grid; gap: 8px }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero col">
+  <div class="kicker">Technical white paper · physicalai-sim2real-camera</div>
+  <h1>Realistic cameras for Genesis</h1>
+  <p class="lede">Genesis renders a perfect pinhole image, instantly. A robot's real camera distorts, adds noise, blurs while the head turns, reads its rows with a rolling shutter and delivers frames late, jittered and sometimes not at all. This paper describes how we put a full sim-to-real camera model on top of Genesis without modifying Genesis, how closely it matches the same model in MuJoCo, how it scales to hundreds of environments, and what it does not cover.</p>
+  <div class="meta"><span><b>Genesis</b> 1.4.5 (unmodified)</span><span><b>MuJoCo</b> 3.14</span><span><b>GPU</b> RTX 5080</span><span><b>Status</b> 2026-11-20</span></div>
+</header>
+
+<section class="col" aria-label="Key results">
+  <div class="keyfigs">
+    <div class="kf"><span class="v">0.995</span><span class="l">median silhouette IoU against MuJoCo, G1 head camera, window mode</span></div>
+    <div class="kf"><span class="v">0.46 px</span><span class="l">median image-centroid offset against MuJoCo (rasterizer; Madrona 0.12 px)</span></div>
+    <div class="kf"><span class="v">1.12 ms</span><span class="l">per environment at 256 environments, 13 sub-renders + depth per capture</span></div>
+    <div class="kf"><span class="v">17 / 17</span><span class="l">Genesis integration and unit tests passing on the versions above</span></div>
+  </div>
+</section>
+
+<section class="col">
+  <h2><span class="n">1</span>The problem</h2>
+  <p>Visuomotor policies trained in simulation see an idealised camera. Genesis cameras return the rendered image only: there is no noise, vignetting, motion blur, rolling shutter or exposure model, and the camera sensor rejects <code>delay</code> and <code>jitter</code> options. A policy that never met these effects in training meets all of them at once on the robot.</p>
+  <p><b>physicalai-sim2real-camera</b> is a post-process on the simulator's render that makes the simulated camera behave like a real one: lens distortion, vignetting and depth of field; exposure, auto exposure, shot, read and fixed-pattern noise, Bayer and gamma; motion blur over the exposure window and rolling shutter over the readout; frame rate, latency, jitter and drops; and depth artefacts. Nearly every parameter is a physical quantity that can be fitted from captures of the real camera. The pipeline was first built for MuJoCo. The Genesis backend feeds Genesis renders into the same pipeline, so the same configuration produces the same camera in both simulators.</p>
+  <figure>
+    <img src="assets/overview.svg" alt="Overview of the package: the effects it models, the simulators it runs in, and where the parameter values come from">
+    <figcaption><b>Figure 1.</b> What the package models, where it runs, and where its numbers come from.</figcaption>
+  </figure>
+</section>
+
+<section class="col">
+  <h2><span class="n">2</span>Architecture</h2>
+  <p>The backend is one class, <code>GenesisCamera</code>. It never renders from the user's physics scene. It reads the robot's joint state from the physics scene, keeps a short history of it, and renders in a second, never-stepped copy of the scene (the mirror scene). The rendered sub-frames go into the same accumulation and image pipeline that MuJoCo uses, and the user receives frames through the same <code>CameraStream</code>.</p>
+  <div class="chart" role="img" aria-label="Data flow: physics scene to joint-state ring, to interpolated mirror-scene renders, to the image pipeline, to the camera stream and the policy">
+    <svg viewBox="0 0 980 250" xmlns="http://www.w3.org/2000/svg" font-family="Inter, system-ui, sans-serif">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink-3)"/></marker></defs>
+      <g font-size="13">
+        <rect x="10" y="60" width="170" height="92" rx="10" fill="var(--paper)" stroke="var(--rule)" stroke-width="1.5"/>
+        <text x="95" y="90" text-anchor="middle" font-weight="600" fill="var(--ink)">Physics scene</text>
+        <text x="95" y="111" text-anchor="middle" fill="var(--ink-2)">Genesis, stepped</text>
+        <text x="95" y="130" text-anchor="middle" fill="var(--ink-2)">by the user</text>
+        <rect x="225" y="60" width="160" height="92" rx="10" fill="var(--paper)" stroke="var(--rule)" stroke-width="1.5"/>
+        <text x="305" y="90" text-anchor="middle" font-weight="600" fill="var(--ink)">Joint-state ring</text>
+        <text x="305" y="111" text-anchor="middle" fill="var(--ink-2)">(t, qpos) per step</text>
+        <text x="305" y="130" text-anchor="middle" fill="var(--ink-2)">slerp for free joints</text>
+        <rect x="430" y="60" width="190" height="92" rx="10" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+        <text x="525" y="90" text-anchor="middle" font-weight="600" fill="var(--ink)">Mirror scene</text>
+        <text x="525" y="111" text-anchor="middle" fill="var(--ink-2)">never stepped; renders</text>
+        <text x="525" y="130" text-anchor="middle" fill="var(--ink-2)">each sub-frame's pose</text>
+        <rect x="665" y="60" width="160" height="92" rx="10" fill="var(--paper)" stroke="var(--rule)" stroke-width="1.5"/>
+        <text x="745" y="90" text-anchor="middle" font-weight="600" fill="var(--ink)">Image pipeline</text>
+        <text x="745" y="111" text-anchor="middle" fill="var(--ink-2)">SimCameraBatch</text>
+        <text x="745" y="130" text-anchor="middle" fill="var(--ink-2)">(shared with MuJoCo)</text>
+        <rect x="870" y="60" width="100" height="92" rx="10" fill="var(--paper)" stroke="var(--rule)" stroke-width="1.5"/>
+        <text x="920" y="90" text-anchor="middle" font-weight="600" fill="var(--ink)">Camera</text>
+        <text x="920" y="109" text-anchor="middle" font-weight="600" fill="var(--ink)">Stream</text>
+        <text x="920" y="130" text-anchor="middle" fill="var(--ink-2)">→ policy</text>
+      </g>
+      <g stroke="var(--ink-3)" stroke-width="1.6" fill="none" marker-end="url(#ar)">
+        <path d="M180 106 H222"/><path d="M385 106 H427"/><path d="M620 106 H662"/><path d="M825 106 H867"/>
+      </g>
+      <g font-size="12" fill="var(--ink-3)" font-family="JetBrains Mono, ui-monospace, monospace">
+        <text x="200" y="42" text-anchor="middle">read qpos only</text>
+        <text x="405" y="42" text-anchor="middle">set_qpos(t_k)</text>
+        <text x="642" y="42" text-anchor="middle">margin render</text>
+        <text x="845" y="42" text-anchor="middle">rgb, depth</text>
+        <text x="525" y="190" text-anchor="middle">one render per exposure sample and rolling-shutter band (13 per capture) + one depth render</text>
+        <text x="525" y="212" text-anchor="middle">rasterizer (one environment at a time) or Madrona batch renderer (all environments in one GPU pass)</text>
+      </g>
+    </svg>
+  </div>
+  <p>Two decisions shape the design. First, motion blur and rolling shutter need renders at sub-frame times on a 2 ms grid, while a typical Genesis physics step is 5 ms. The backend therefore records <code>(t, qpos)</code> every step and renders at interpolated states, the same way the MuJoCo backend does. Second, rendering happens in a separate scene because writing the joint state back into Genesis' physics scene changes later physics steps, even when the same values are written (section 3).</p>
+  <pre><code>import genesis as gs
+from physicalai_sim2real_camera import CameraConfig, CameraStream
+from physicalai_sim2real_camera.genesis_bridge import GenesisCamera
+
+gs.init(backend=gs.gpu)
+scene = gs.Scene(sim_options=gs.options.SimOptions(dt=0.005))
+robot = scene.add_entity(gs.morphs.MJCF(file=xml))
+cfg = CameraConfig.preset("calibrated", 640, 480)
+cam = GenesisCamera(xml, "head_cam", cfg, dt=0.005)   # builds its own mirror scene
+scene.build()
+stream = CameraStream(cam, cfg)
+for _ in range(n_steps):
+    scene.step()
+    frame, capture_t, k = stream.step(types.SimpleNamespace(time=scene.sim.cur_t, qpos=robot.get_qpos()))</code></pre>
+</section>
+
+<section class="col">
+  <h2><span class="n">3</span>What we built on top of Genesis</h2>
+  <p>Genesis itself is not modified. Everything below lives in the package's Genesis bridge and its examples and checks. Each item exists because of a specific property of Genesis.</p>
+</section>
+<section class="wide">
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Component</th><th>Why it was needed</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td>Image-pipeline bridge</td><td>Genesis cameras return the ideal render only; the camera sensor rejects delay and jitter</td><td><code>GenesisCamera</code> → <code>SimCameraBatch(renderer=False)</code></td></tr>
+        <tr><td>Render-only mirror scene</td><td><code>RigidSolver.set_qpos</code> changes later physics steps even when it rewrites the current values (a finger joint drifted 0.04 rad after 7 s); restoring warm-start state or skipping forward kinematics did not help</td><td><code>GenesisCamera.mirror</code></td></tr>
+        <tr><td>Joint-state ring and interpolation</td><td>Blur and rolling-shutter sub-frames fall on a 2 ms grid; physics steps are 5 ms</td><td><code>push</code>, <code>interp_qpos</code></td></tr>
+        <tr><td>Floating-base interpolation</td><td>Quaternions of free and ball joints must not be interpolated linearly; matches MuJoCo's integration to 4.4e-16</td><td><code>quat_starts</code>, <code>slerp</code></td></tr>
+        <tr><td>Camera mount resolution</td><td>Genesis merges joint-less bodies into their parent link and drops MJCF cameras</td><td><code>camera_mount</code></td></tr>
+        <tr><td>Depth background correction</td><td>A 24-bit depth buffer resolves z near the far plane coarsely, so the background could be classified as a surface</td><td><code>zfar_of</code></td></tr>
+        <tr><td>Batched environments</td><td>Many environments, each with its own pose, rendered from one scene</td><td><code>n_envs</code></td></tr>
+        <tr><td>Camera-following headlight</td><td>Genesis lights are fixed, so brightness drifts from MuJoCo's headlight as the head turns (figure 4)</td><td><code>headlight</code></td></tr>
+        <tr><td>Large-scale path</td><td>The rasterizer renders environments one by one and reads them back to the host</td><td>Madrona batch renderer, batched accumulation, fused lookup</td></tr>
+        <tr><td>Calibrated mount pose and randomisation</td><td>Real robots use a calibrated extrinsic; training randomises it per episode</td><td><code>extrinsics</code>, <code>set_extrinsics</code></td></tr>
+        <tr><td>Mount vibration</td><td>Each sub-render needs its own mount pose so that vibration shows up as blur</td><td>margin camera re-attached per sub-render</td></tr>
+        <tr><td>Validation suite and examples</td><td>Agreement with MuJoCo has to be measured, not assumed</td><td>WIRobotics ALLEX, Unitree G1, Apptronik Apollo checks</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="col">
+  <h2><span class="n">4</span>Agreement with MuJoCo</h2>
+  <p>The same MJCF camera, configuration and seed were run in both simulators, and the outputs were compared on two robots. The G1 check drives a floating base kinematically (forward 0.4 m/s, yaw 2.5 rad/s, 1.8 Hz bob, swinging arms) and feeds both simulators the same joint state every 2 ms; 58 window-mode captures are compared under ambient light only, so the comparison measures geometry and timing rather than shading.</p>
+  <figure>
+    <img src="assets/g1_three_renderers.jpg" alt="The same G1 head-camera capture in window mode from MuJoCo, the Genesis rasterizer and the Genesis Madrona renderer; the two cubes show the same blur and rolling-shutter skew in all three">
+    <figcaption><b>Figure 2.</b> One G1 head-camera capture during a fast yaw (t = 1.8 s), window mode with distortion, from the three renderers. Blur and rolling-shutter skew agree; the background colour differs because each renderer clears to its own colour.</figcaption>
+  </figure>
+  <figure>
+    <img src="assets/g1_window_vs_gs.jpg" alt="Genesis capture rendered as a global shutter at capture time, in window mode, and as a global shutter at the end of the exposure">
+    <figcaption><b>Figure 3.</b> What window mode adds (Genesis): the same capture as a global-shutter render at the capture time, with motion blur and rolling shutter, and as a global-shutter render at the end of the exposure.</figcaption>
+  </figure>
+</section>
+<section class="wide">
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Check (G1 unless noted)</th><th class="num">MuJoCo</th><th class="num">Genesis rasterizer</th><th class="num">Genesis Madrona</th></tr></thead>
+      <tbody>
+        <tr><td>Joint-state layout: link positions from the same qpos</td><td class="num">reference</td><td class="num">3.1e-7 m max</td><td class="num">3.1e-7 m max</td></tr>
+        <tr><td>Window-mode silhouette IoU vs MuJoCo, median (min)</td><td class="num">—</td><td class="num">0.995 (0.990)</td><td class="num">0.995 (0.993)</td></tr>
+        <tr><td>Image-centroid offset vs MuJoCo, median (max)</td><td class="num">—</td><td class="num">0.46 px (1.21)</td><td class="num">0.12 px (0.65)</td></tr>
+        <tr><td>Window centroid vs global shutter at capture time, median</td><td class="num">6.95 px</td><td class="num">7.05 px</td><td class="num">6.90 px</td></tr>
+        <tr><td>Frame timing, 42.7 s (ALLEX): frames, gaps, mean age, p99 age</td><td class="num">1252, 27, 68.4 ms, 84 ms</td><td class="num">identical</td><td class="num">—</td></tr>
+        <tr><td>Depth on object pixels (ALLEX), median (worst frame)</td><td class="num">reference</td><td class="num">0.15 mm (2.28 mm)</td><td class="num">—</td></tr>
+        <tr><td>Physics trajectory with the window camera on vs off (ALLEX)</td><td class="num">—</td><td class="num">0 rad difference</td><td class="num">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+<section class="col">
+  <p>On ALLEX (60 degrees of freedom, 12 polynomial joint equalities, a 42.7 s recorded motion with ±65° waist and neck turns) the Genesis MJCF loader reproduces the MuJoCo joint trajectory to 0.0012 rad on the waist and neck and 0.013 rad on the arms. Calibrating the camera from rendered checkerboards recovers the focal length to within 0.14 % in both simulators, and the residual lens-field error is 0.33-0.52 px. Genesis output sits about (−0.21, −0.12) px from MuJoCo's, a constant shift that a calibrated principal point absorbs.</p>
+
+  <h3>Lighting</h3>
+  <p>Genesis and MuJoCo shade differently, and Genesis lights are fixed in the world. With Genesis' default lights the image is 30-46 % darker than MuJoCo's and auto exposure compensates with up to 3.6x gain, which multiplies the noise. A fixed forward light matches one view and fails when the head looks down. The camera-following headlight keeps brightness within 1.1 % of MuJoCo on every segment of the ALLEX motion.</p>
+  <div class="chart" id="lightChart">
+    <div class="legend" aria-hidden="true">
+      <span><i class="dot" style="background:var(--s2)"></i>Genesis default lights</span>
+      <span><i class="dot" style="background:var(--s1)"></i>fixed forward light</span>
+      <span><i class="dot" style="background:var(--s3)"></i>camera-following headlight</span>
+    </div>
+    <svg viewBox="0 0 640 260" role="img" aria-label="Brightness deviation from MuJoCo per segment of the motion for three Genesis lighting setups"></svg>
+  </div>
+  <figcaption><b>Figure 4.</b> Mean image brightness relative to MuJoCo over four segments of the ALLEX recorded motion (head still; waist and neck turning; looking down at the floor; whole turning part). Hover a point for its value.</figcaption>
+  <details><summary>Table view</summary>
+    <div class="tbl"><table>
+      <thead><tr><th>Segment</th><th class="num">Default lights</th><th class="num">Fixed forward</th><th class="num">Headlight</th></tr></thead>
+      <tbody><tr><td>2-14 s, head still</td><td class="num">−46.0 %</td><td class="num">+3.4 %</td><td class="num">−0.6 %</td></tr>
+      <tr><td>14-30 s, turning</td><td class="num">−45.4 %</td><td class="num">+3.2 %</td><td class="num">−0.7 %</td></tr>
+      <tr><td>30-42 s, looking down</td><td class="num">−30.3 %</td><td class="num">−27.8 %</td><td class="num">+1.1 %</td></tr>
+      <tr><td>14-42 s, all turning</td><td class="num">−38.5 %</td><td class="num">−11.0 %</td><td class="num">+0.1 %</td></tr></tbody>
+    </table></div>
+  </details>
+</section>
+
+<section class="col">
+  <h2><span class="n">5</span>Scaling to many environments</h2>
+  <p>Profiling the rasterizer path at 16 environments showed where the time went: 74 % in Genesis rendering and host read-back, 14 % in copies, 5 % in the per-environment ingest loop and 0.6 % in the image post-process. The heavy work already ran in CUDA kernels, so the fix was to remove the measured bottlenecks: the Madrona batch renderer renders every environment in one GPU pass and leaves frames on the GPU; a batched accumulation folds each sub-frame into all cameras at once; and an optional compiled lookup fuses the gather. Each step keeps results bit-identical to the single-camera path.</p>
+  <div class="chart" id="scaleChart">
+    <div class="legend" aria-hidden="true">
+      <span><i style="background:var(--s1)"></i>rasterizer</span>
+      <span><i style="background:var(--s2)"></i>Madrona</span>
+      <span><i style="background:var(--s3)"></i>Madrona + compiled lookup</span>
+    </div>
+    <svg viewBox="0 0 640 300" role="img" aria-label="Milliseconds per environment against the number of environments, log scales, for three render paths"></svg>
+  </div>
+  <figcaption><b>Figure 5.</b> Cost per environment of one window-mode capture (13 sub-renders + depth at 656×494), G1 scene, RTX 5080 not shared with other work. Both axes are logarithmic. The rasterizer path runs out of memory before 256 environments.</figcaption>
+  <details><summary>Table view</summary>
+    <div class="tbl"><table>
+      <thead><tr><th class="num">Environments</th><th class="num">Rasterizer</th><th class="num">Madrona</th><th class="num">Madrona + compiled</th></tr></thead>
+      <tbody><tr><td class="num">1</td><td class="num">24.9 ms</td><td class="num">25.2 ms</td><td class="num">—</td></tr>
+      <tr><td class="num">4</td><td class="num">11.3 ms</td><td class="num">—</td><td class="num">—</td></tr>
+      <tr><td class="num">16</td><td class="num">7.2 ms</td><td class="num">2.32 ms</td><td class="num">2.10 ms</td></tr>
+      <tr><td class="num">64</td><td class="num">—</td><td class="num">1.48 ms</td><td class="num">1.22 ms</td></tr>
+      <tr><td class="num">256</td><td class="num">out of memory</td><td class="num">1.38 ms</td><td class="num">1.12 ms</td></tr></tbody>
+    </table></div>
+  </details>
+</section>
+
+<section class="col">
+  <h2><span class="n">6</span>In motion: Apptronik Apollo</h2>
+  <p>The Apollo example mounts a D435-class camera on the robot's head in Genesis and replays a scripted motion: the neck scans, turns fast in three windows and the right arm waves through the view, so blur, rolling shutter and latency all show. The panel video puts the external view, the ideal head-camera render at the current time and the frame the policy actually holds side by side.</p>
+  <figure>
+    <video controls preload="metadata" playsinline poster="assets/apollo_panel_poster.jpg" src="assets/apollo_panel.mp4"></video>
+    <figcaption><b>Video 1.</b> Apollo in Genesis, 34 s. Top: external view. Bottom left: ideal head-camera render now. Bottom right: the pipeline's output that the policy holds, with its age in milliseconds.</figcaption>
+  </figure>
+  <figure>
+    <video controls preload="metadata" playsinline poster="assets/explainer_poster.jpg" src="assets/explainer.mp4"></video>
+    <figcaption><b>Video 2.</b> A 2.5-minute walkthrough of every effect the pipeline models, with the Apollo head camera in Genesis: distortion, sensor noise, motion blur and rolling shutter, timing, depth artefacts, the calibrated preset, and one pipeline for MuJoCo and Genesis. Synthetic narration.</figcaption>
+  </figure>
+  <figure>
+    <img src="assets/apollo_stills.jpg" alt="Four stills of the Apollo head camera at different times of the scripted motion">
+    <figcaption><b>Figure 6.</b> Apollo head-camera stills along the scripted motion (composition check in MuJoCo).</figcaption>
+  </figure>
+</section>
+
+<section class="col">
+  <h2><span class="n">7</span>Limits</h2>
+  <ul>
+    <li><b>The headlight needs an unbatched rasterizer scene.</b> In split-environment rendering all environments share one light node, and the Madrona renderer fixes its lights at build time. Batched scenes use fixed lights, so the brightness match in figure 4 holds for unbatched scenes only.</li>
+    <li><b>All batched environments capture at the same time.</b> Staggered capture phases would need one stream per environment.</li>
+    <li><b>The mirror scene doubles render geometry and build time.</b></li>
+    <li><b>Not covered by tests:</b> mount vibration in Genesis has no dedicated test; the 17 tests cover the mount resolution, interpolation (including quaternions), projection against an analytic silhouette (1 px), the window time axis (0.5 px), batched-versus-single bit identity and the headlight.</li>
+    <li>The lighting match was tuned on the ALLEX motion and checked on the same motion; other scenes were not measured.</li>
+  </ul>
+</section>
+
+<section class="col">
+  <h2><span class="n">8</span>Status and direction</h2>
+  <div class="note">Development of the camera model continues on MuJoCo. The Genesis backend is kept as it is: no new features, guarded by its tests. On 2026-11-20 all 17 Genesis tests pass with Genesis 1.4.5, MuJoCo 3.14 and torch 2.11 (CUDA 12.8) on an RTX 5080.</div>
+  <p>If Genesis work resumes, these are the next steps, in order:</p>
+  <ul>
+    <li>After any Genesis upgrade, re-run the 17 tests and the G1 and ALLEX agreement checks before relying on the numbers above.</li>
+    <li>If Genesis gains per-environment light nodes, or light poses that can change between renders in the batch renderer, move the light per environment just before each render and lift the headlight restriction.</li>
+    <li>If writing the joint state stops perturbing Genesis physics, render directly from the physics scene and drop the mirror scene, halving geometry and build time.</li>
+  </ul>
+</section>
+
+<section class="col">
+  <h2><span class="n">9</span>Reproduce</h2>
+  <p>Genesis goes in its own environment because it installs MuJoCo 4 and opencv-python; MuJoCo is pinned back to 3.14.</p>
+  <pre><code>uv venv -p 3.12 .venv-genesis
+uv pip install -p .venv-genesis torch --index-url https://download.pytorch.org/whl/cu128
+uv pip install -p .venv-genesis genesis-world==1.4.5 mujoco==3.14.0 pytest
+uv pip install -p .venv-genesis --no-deps -e .
+
+# tests
+MUJOCO_GL=egl .venv-genesis/bin/python -m pytest tests/test_genesis_bridge.py tests/test_genesis_apollo.py
+
+# G1 agreement and scaling
+.venv-genesis/bin/python scripts/genesis_g1_check.py render genesis
+.venv-genesis/bin/python scripts/genesis_g1_check.py report
+.venv-genesis/bin/python scripts/genesis_g1_check.py bench madrona compile 16 64 256
+
+# Apollo video
+.venv-genesis/bin/python examples/genesis_apollo.py --sim genesis --cfg calibrated --seconds 34 --video apollo.mp4</code></pre>
+</section>
+
+<footer class="col">
+  <p>Robot models from MuJoCo Menagerie: Apptronik Apollo (Apache-2.0) and Unitree G1 (BSD-3-Clause). WIRobotics ALLEX results are reported as numbers only; its meshes are not redistributable and are not shown. Simulators: Genesis 1.4.5 and MuJoCo 3.14. All measurements on one RTX 5080 workstation. The package source is published under the Apache License 2.0.</p>
+</footer>
+</div>
+
+<script>
+(function () {
+  const NS = "http://www.w3.org/2000/svg";
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.appendChild(e); return e; }
+  function tipper(box) { const t = document.createElement("div"); t.className = "tip"; t.hidden = true; box.appendChild(t);
+    return { show(html, x, y) { t.innerHTML = html; t.style.left = x + "px"; t.style.top = y + "px"; t.hidden = false; }, hide() { t.hidden = true; } }; }
+  function pos(svg, box, x, y) { const r = svg.getBoundingClientRect(), b = box.getBoundingClientRect(), vb = svg.viewBox.baseVal;
+    return [r.left - b.left + x * r.width / vb.width, r.top - b.top + y * r.height / vb.height]; }
+
+  // Figure 5: per-environment cost, log-log
+  (function () {
+    const box = document.getElementById("scaleChart"), svg = box.querySelector("svg"), tip = tipper(box);
+    const W = 640, H = 300, L = 52, R = 150, T = 14, B = 40;
+    const series = [
+      { name: "rasterizer", c: "--s1", pts: [[1, 24.9], [4, 11.3], [16, 7.2]] },
+      { name: "Madrona", c: "--s2", pts: [[1, 25.2], [16, 2.32], [64, 1.48], [256, 1.38]] },
+      { name: "Madrona + compiled", c: "--s3", pts: [[16, 2.10], [64, 1.22], [256, 1.12]] } ];
+    const x = (n) => L + (Math.log2(n) / 8) * (W - L - R);
+    const y = (ms) => T + (1 - (Math.log10(ms) - 0) / Math.log10(30)) * (H - T - B);
+    const g = el("g", {}, svg);
+    [1, 2, 5, 10, 20].forEach((v) => { el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: "var(--grid)", "stroke-width": 1 }, g);
+      el("text", { x: L - 8, y: y(v) + 4, "text-anchor": "end", "font-size": 11, fill: "var(--ink-3)" }, g).textContent = v + " ms"; });
+    [1, 4, 16, 64, 256].forEach((n) => { el("text", { x: x(n), y: H - B + 18, "text-anchor": "middle", "font-size": 11, fill: "var(--ink-3)" }, g).textContent = n; });
+    el("text", { x: (L + W - R) / 2, y: H - 6, "text-anchor": "middle", "font-size": 11, fill: "var(--ink-2)" }, g).textContent = "environments";
+    el("line", { x1: L, x2: W - R, y1: H - B, y2: H - B, stroke: "var(--ink-3)", "stroke-width": 1 }, g);
+    series.forEach((s) => {
+      const d = s.pts.map((p, i) => (i ? "L" : "M") + x(p[0]) + " " + y(p[1])).join(" ");
+      el("path", { d, fill: "none", stroke: `var(${s.c})`, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+      s.pts.forEach((p) => { const c = el("circle", { cx: x(p[0]), cy: y(p[1]), r: 4.5, fill: `var(${s.c})`, stroke: "var(--paper)", "stroke-width": 2 }, svg);
+        const hit = el("circle", { cx: x(p[0]), cy: y(p[1]), r: 12, fill: "transparent", tabindex: 0, "aria-label": `${s.name}, ${p[0]} environments: ${p[1]} ms per environment` }, svg);
+        const on = () => { const [px, py] = pos(svg, box, x(p[0]), y(p[1])); tip.show(`<b>${s.name}</b><br>${p[0]} env: ${p[1]} ms / env`, px, py); };
+        hit.addEventListener("mouseenter", on); hit.addEventListener("focus", on); hit.addEventListener("mouseleave", tip.hide); hit.addEventListener("blur", tip.hide); });
+      const last = s.pts[s.pts.length - 1];
+      el("text", { x: x(last[0]) + 10, y: y(last[1]) + 4 + (s.name === "Madrona" ? -8 : s.name.startsWith("Madrona +") ? 8 : 0), "font-size": 12, fill: "var(--ink-2)" }, svg).textContent = s.name;
+    });
+  })();
+
+  // Figure 4: brightness deviation, dot plot
+  (function () {
+    const box = document.getElementById("lightChart"), svg = box.querySelector("svg"), tip = tipper(box);
+    const W = 640, H = 260, L = 170, R = 24, T = 14, B = 36;
+    const segs = ["2-14 s, head still", "14-30 s, turning", "30-42 s, looking down", "14-42 s, all turning"];
+    const series = [
+      { name: "Genesis default lights", c: "--s2", v: [-46.0, -45.4, -30.3, -38.5] },
+      { name: "fixed forward light", c: "--s1", v: [3.4, 3.2, -27.8, -11.0] },
+      { name: "headlight", c: "--s3", v: [-0.6, -0.7, 1.1, 0.1] } ];
+    const x = (v) => L + ((v + 50) / 60) * (W - L - R);
+    const rowH = (H - T - B) / segs.length, y = (i, k) => T + rowH * i + rowH / 2 + (k - 1) * 9;
+    [-50, -40, -30, -20, -10, 0, 10].forEach((v) => { el("line", { x1: x(v), x2: x(v), y1: T, y2: H - B, stroke: v === 0 ? "var(--ink-3)" : "var(--grid)", "stroke-width": v === 0 ? 1.2 : 1 }, svg);
+      el("text", { x: x(v), y: H - B + 18, "text-anchor": "middle", "font-size": 11, fill: "var(--ink-3)" }, svg).textContent = (v > 0 ? "+" : "") + v + " %"; });
+    el("text", { x: x(0), y: H - 4, "text-anchor": "middle", "font-size": 11, fill: "var(--ink-2)" }, svg).textContent = "brightness vs MuJoCo";
+    segs.forEach((s, i) => { el("text", { x: L - 12, y: T + rowH * i + rowH / 2 + 4, "text-anchor": "end", "font-size": 12, fill: "var(--ink-2)" }, svg).textContent = s; });
+    series.forEach((s, k) => s.v.forEach((v, i) => {
+      el("circle", { cx: x(v), cy: y(i, k), r: 5, fill: `var(${s.c})`, stroke: "var(--paper)", "stroke-width": 2 }, svg);
+      const hit = el("circle", { cx: x(v), cy: y(i, k), r: 11, fill: "transparent", tabindex: 0, "aria-label": `${s.name}, ${segs[i]}: ${v} %` }, svg);
+      const on = () => { const [px, py] = pos(svg, box, x(v), y(i, k)); tip.show(`<b>${s.name}</b><br>${segs[i]}: ${(v > 0 ? "+" : "") + v.toFixed(1)} %`, px, py); };
+      hit.addEventListener("mouseenter", on); hit.addEventListener("focus", on); hit.addEventListener("mouseleave", tip.hide); hit.addEventListener("blur", tip.hide);
+    }));
+  })();
+})();
+</script>
+</body>
+</html>

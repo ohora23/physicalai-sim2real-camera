@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="560" viewBox="0 0 1000 560" font-family="Inter, Helvetica, Arial, sans-serif" font-size="13">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4b5563"/>
+    </marker>
+    <style>
+      .box{fill:#ffffff;stroke:#9ca3af;stroke-width:1.2;rx:8}
+      .hdr{font-weight:700;font-size:14px;fill:#111827}
+      .sub{fill:#374151}
+      .s12{fill:#374151;font-size:12px}
+      .dim{fill:#6b7280;font-size:12px}
+      .tag{font-size:11px;font-weight:600;fill:#1f2937}
+      .arrow{stroke:#4b5563;stroke-width:1.6;fill:none;marker-end:url(#a)}
+      .lane{fill:#f3f4f6;stroke:none;rx:10}
+      .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;fill:#1d4ed8}
+    </style>
+  </defs>
+  <rect width="1000" height="560" fill="#ffffff" rx="12"/>
+
+  <!-- Row 1: what it does -->
+  <text x="20" y="28" class="hdr">What it does: a real camera's imperfections, applied after the simulator renders</text>
+
+  <rect x="20" y="48" width="150" height="150" class="box"/>
+  <text x="30" y="70" class="hdr">Simulator scene</text>
+  <text x="30" y="92" class="s12">MuJoCo or Genesis</text>
+  <text x="30" y="110" class="s12">MJCF + &lt;camera&gt;, step</text>
+  <text x="30" y="128" class="s12">any env, any robot</text>
+  <text x="30" y="160" class="dim">unchanged MJCF,</text>
+  <text x="30" y="176" class="dim">no C++ plugin</text>
+
+  <path d="M170 123 L188 123" class="arrow"/>
+
+  <rect x="190" y="48" width="160" height="150" class="box"/>
+  <text x="200" y="70" class="hdr">Renderer</text>
+  <text x="200" y="92" class="s12">mujoco.Renderer (EGL)</text>
+  <text x="200" y="110" class="s12">Genesis / Madrona</text>
+  <text x="200" y="128" class="s12">colour u8 + depth f32</text>
+  <text x="200" y="160" class="dim">margin render, so the</text>
+  <text x="200" y="176" class="dim">distorted frame is full</text>
+
+  <path d="M350 123 L368 123" class="arrow"/>
+
+  <rect x="370" y="48" width="440" height="150" class="box" style="stroke:#2563eb;stroke-width:1.6"/>
+  <text x="380" y="70" class="hdr">physicalai_sim2real_camera pipeline  <tspan class="dim">(CameraConfig, identity by default)</tspan></text>
+  <text x="380" y="94" class="tag">optics</text><text x="440" y="94" class="s12">Brown-Conrady distortion, vignetting (cos⁴ or flat-field), DoF</text>
+  <text x="380" y="114" class="tag">sensor</text><text x="440" y="114" class="s12">exposure EV, AE/AWB, shot/read/PRNU/DSNU noise, Bayer, γ</text>
+  <text x="380" y="134" class="tag">temporal</text><text x="440" y="134" class="s12">motion blur (exposure window), rolling shutter (readout)</text>
+  <text x="380" y="154" class="tag">depth</text><text x="440" y="154" class="s12">edge holes, flying pixels, z² axial noise, range limits</text>
+  <text x="380" y="174" class="tag">timing</text><text x="440" y="174" class="s12">fps, phase, latency, Gamma jitter, drops, sample-and-hold</text>
+  <text x="380" y="192" class="dim">calibrated from real captures: K, D, PTC, response curve, LED latency</text>
+
+  <path d="M810 123 L828 123" class="arrow"/>
+
+  <rect x="830" y="48" width="150" height="150" class="box"/>
+  <text x="840" y="70" class="hdr">policy / RL env</text>
+  <text x="840" y="92" class="s12">frames arrive the way</text>
+  <text x="840" y="110" class="s12">a real camera delivers</text>
+  <text x="840" y="128" class="s12">them: late, jittered,</text>
+  <text x="840" y="146" class="s12">sometimes dropped</text>
+  <text x="840" y="176" class="dim">numpy or CUDA tensor</text>
+
+  <!-- Row 2: execution paths -->
+  <text x="20" y="240" class="hdr">Where it runs (MuJoCo paths; Genesis incl. Madrona batches: docs/genesis.md)</text>
+
+  <rect x="20" y="258" width="222" height="134" class="lane"/>
+  <text x="32" y="280" class="hdr">CPU</text>
+  <text x="32" y="300" class="code">SimCamera(model, cam, cfg)</text>
+  <text x="32" y="320" class="s12">numpy + cv2 (LUT remap, randn)</text>
+  <text x="32" y="338" class="s12">no torch, no GPU driver work</text>
+  <text x="32" y="378" class="dim">≈ 3 ms / frame at 640×480</text>
+
+  <rect x="254" y="258" width="222" height="134" class="lane"/>
+  <text x="266" y="280" class="hdr">GPU</text>
+  <text x="266" y="300" class="code">device="cuda", interop=True</text>
+  <text x="266" y="320" class="s12">torch kernels in CHW float32</text>
+  <text x="266" y="338" class="s12">GL colour buffer → CUDA tensor,</text>
+  <text x="266" y="356" class="s12">no readPixels, no upload</text>
+  <text x="266" y="378" class="dim">≈ 0.3 ms / frame → tensor (idle GPU)</text>
+
+  <rect x="488" y="258" width="222" height="134" class="lane"/>
+  <text x="500" y="280" class="hdr">Batch (GPU-RL)</text>
+  <text x="500" y="300" class="code">SimCameraBatch(..., cfg, n)</text>
+  <text x="500" y="320" class="s12">n envs on one Renderer, chunked</text>
+  <text x="500" y="338" class="s12">kernels, ring of frame slots</text>
+  <text x="500" y="378" class="dim">64 cams ≈ 22 ms (0.34 ms / cam)</text>
+
+  <rect x="722" y="258" width="258" height="134" class="lane"/>
+  <text x="734" y="280" class="hdr">Virtual sensor</text>
+  <text x="734" y="300" class="code">examples/virtual_sensor.py</text>
+  <text x="734" y="320" class="s12">3 processes, GPU left to the policy:</text>
+  <text x="734" y="338" class="s12">sim (GL only) → dma-buf → effects (CUDA)</text>
+  <text x="734" y="356" class="s12">→ Axon zero-copy topic → policy</text>
+  <text x="734" y="378" class="dim">16 cams @ 30 fps, staggered: p99 ≈ 1.4 ms</text>
+
+  <!-- Row 3: calibration loop -->
+  <text x="20" y="430" class="hdr">Where the numbers come from: closed-loop calibration</text>
+  <rect x="20" y="448" width="280" height="104" class="box"/>
+  <text x="30" y="470" class="hdr">real camera captures</text>
+  <text x="30" y="490" class="s12">D1 checkerboard · D2 flat-field stack</text>
+  <text x="30" y="506" class="s12">D3 dark frame · D4 grey chart</text>
+  <text x="30" y="522" class="s12">D5 LED blink timing</text>
+  <text x="30" y="542" class="dim">docs/capture_protocol.md</text>
+
+  <path d="M300 495 L318 495" class="arrow"/>
+
+  <rect x="320" y="448" width="340" height="104" class="box"/>
+  <text x="330" y="470" class="hdr">scripts/calibrate.py</text>
+  <text x="330" y="490" class="s12">cv2.calibrateCamera → K, D · PTC fit → σ_shot, σ_read</text>
+  <text x="330" y="508" class="s12">response curve → γ, EV · LED blink → latency, jitter, drop</text>
+  <text x="330" y="542" class="dim">camera_config.json + calib_uncertainty.json</text>
+
+  <path d="M660 495 L678 495" class="arrow"/>
+
+  <rect x="680" y="448" width="300" height="104" class="box"/>
+  <text x="690" y="470" class="hdr">CameraConfig</text>
+  <text x="690" y="490" class="s12">nearly every field is a physical knob;</text>
+  <text x="690" y="508" class="s12">randomize() samples inside the fitted</text>
+  <text x="690" y="526" class="s12">uncertainty for domain randomisation</text>
+</svg>
